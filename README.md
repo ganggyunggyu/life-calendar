@@ -1,37 +1,96 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# LifeArchiveCalendar
 
-## Getting Started
+평생 타임라인을 한 화면에서 줌인/줌아웃하며 볼 수 있는 개인 기록 캘린더.
 
-First, run the development server:
+10년/1년/월/주/일 단위로 시간의 "영역 감각"이 생기도록 설계된 장기 기록 서비스다.
+
+## 주요 기능
+
+- **멀티 스케일 뷰**: Decade, Year, Month, Week, Day 5단계 줌 레벨 지원
+- **부드러운 전환**: Framer Motion 기반 줌인/줌아웃 애니메이션
+- **일기 기록**: 감정 점수(1~5), 태그, 체크리스트, 메트릭 지원
+- **다크 모드**: 시스템 설정 연동
+
+## 기술 스택
+
+| 분류 | 기술 |
+|------|------|
+| Framework | Next.js 16 (App Router) |
+| Language | TypeScript |
+| UI | React 19, Tailwind CSS v4 |
+| Animation | Framer Motion |
+| Client State | Jotai |
+| Server State | TanStack Query |
+| Utilities | clsx, tailwind-merge |
+
+## 설치
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+# 의존성 설치
+pnpm install
+# 또는
+npm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 실행
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+# 개발 서버
+pnpm dev
+# 또는
+npm run dev
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+브라우저에서 [http://localhost:3000](http://localhost:3000) 접속.
 
-## Learn More
+## 빌드
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+# 프로덕션 빌드
+pnpm build
+# 또는
+npm run build
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+# 프로덕션 서버 실행
+pnpm start
+# 또는
+npm run start
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## 폴더 구조
 
-## Deploy on Vercel
+FSD(Feature-Sliced Design) 아키텍처를 따른다.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```
+src/
+├── app/                    # Next.js 앱 라우터, Provider
+├── widgets/                # 복합 UI 블록
+│   ├── calendar-shell/     # 메인 캘린더 컨테이너
+│   └── calendar-header/    # 네비게이션, 스케일 전환
+├── features/               # 비즈니스 기능
+│   └── calendar-views/     # 스케일별 뷰 컴포넌트
+│       ├── decade-view/
+│       ├── year-view/
+│       ├── month-view/
+│       ├── week-view/
+│       └── day-view/
+└── shared/                 # 공용 모듈
+    ├── lib/                # cn, date-utils, query-client
+    ├── hooks/              # use-calendar 등 커스텀 훅
+    ├── stores/             # Jotai atoms
+    ├── constants/          # 앱 메타정보
+    └── types/              # 타입 정의
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
-# life-calendar
+## 스크립트
+
+| 명령어 | 설명 |
+|--------|------|
+| `dev` | 개발 서버 실행 |
+| `build` | 프로덕션 빌드 |
+| `start` | 프로덕션 서버 실행 |
+| `lint` | ESLint 실행 |
+
+## 라이선스
+
+MIT
