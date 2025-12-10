@@ -56,6 +56,7 @@ export function MonthView() {
   const events = useAtomValue(eventsAtom);
   const scrollRef = useRef<HTMLDivElement>(null);
   const monthRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+  const isInitialMount = useRef(true);
   const [visibleMonth, setVisibleMonth] = useState(`${focusDate.getFullYear()}-${String(focusDate.getMonth() + 1).padStart(2, '0')}`);
 
   const currentMonthIdx = ALL_MONTHS.findIndex(
@@ -97,16 +98,21 @@ export function MonthView() {
     }
   }, [visibleMonth]);
 
-  const scrollToFocusMonth = useCallback(() => {
+  const scrollToFocusMonth = useCallback((smooth = true) => {
     const targetKey = `${focusDate.getFullYear()}-${String(focusDate.getMonth() + 1).padStart(2, '0')}`;
     const targetEl = monthRefs.current.get(targetKey);
     if (targetEl) {
-      targetEl.scrollIntoView({ block: 'start', behavior: 'smooth' });
+      targetEl.scrollIntoView({ block: 'start', behavior: smooth ? 'smooth' : 'instant' });
     }
   }, [focusDate]);
 
   useEffect(() => {
-    scrollToFocusMonth();
+    if (isInitialMount.current) {
+      scrollToFocusMonth(false);
+      isInitialMount.current = false;
+    } else {
+      scrollToFocusMonth(true);
+    }
   }, [scrollToFocusMonth]);
 
   const setMonthRef = useCallback((key: string) => (el: HTMLDivElement | null) => {

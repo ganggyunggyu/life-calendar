@@ -98,18 +98,23 @@ export function WeekView() {
     }
   }, [currentWeekIdx]);
 
-  const scrollToCurrentWeek = useCallback(() => {
+  const scrollToCurrentWeek = useCallback((smooth = true) => {
     const el = scrollRef.current;
     if (!el) return;
 
     const weekWidth = 520;
     const centerIdx = 52;
     const scrollPos = centerIdx * weekWidth - el.clientWidth / 2 + weekWidth / 2;
-    el.scrollTo({ left: Math.max(0, scrollPos), behavior: 'smooth' });
+    el.scrollTo({ left: Math.max(0, scrollPos), behavior: smooth ? 'smooth' : 'instant' });
   }, []);
 
   useEffect(() => {
-    scrollToCurrentWeek();
+    if (isInitialMount.current) {
+      scrollToCurrentWeek(false);
+      isInitialMount.current = false;
+    } else {
+      scrollToCurrentWeek(true);
+    }
   }, [currentWeekIdx, scrollToCurrentWeek]);
 
   const displayWeeks = ALL_WEEKS.slice(

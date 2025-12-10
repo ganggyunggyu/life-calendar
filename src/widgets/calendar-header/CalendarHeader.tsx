@@ -37,83 +37,74 @@ export function CalendarHeader() {
     setEvents([]);
   };
 
-  const getTitle = () => {
-    switch (scale) {
-      case 'decade':
-        return '타임라인';
-      case 'year':
-        return '타임라인';
-      case 'month':
-        return '타임라인';
-      case 'week':
-        return '타임라인';
-      case 'day':
-        return formatDate(focusDate, 'YYYY년 M월 D일');
-    }
-  };
-
   return (
-    <header className="flex items-center justify-between p-4 border-b border-neutral-200 dark:border-neutral-800">
-      <div className="flex items-center gap-2">
-        {showNavButtons && (
-          <button
-            onClick={navigatePrev}
-            className="p-2 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg transition-colors"
-            aria-label="이전"
-          >
-            ←
-          </button>
-        )}
-        <h1 className="text-lg font-semibold min-w-[120px] text-center">
-          {getTitle()}
-        </h1>
-        {showNavButtons && (
-          <button
-            onClick={navigateNext}
-            className="p-2 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg transition-colors"
-            aria-label="다음"
-          >
-            →
-          </button>
-        )}
-        <button
-          onClick={goToToday}
-          className="ml-2 px-3 py-1.5 text-sm bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 rounded-lg transition-colors"
-        >
-          오늘
-        </button>
-        {!hasData ? (
-          <button
-            onClick={handleLoadDummy}
-            className="ml-2 px-3 py-1.5 text-sm bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors"
-          >
-            더미 데이터 로드
-          </button>
-        ) : (
-          <button
-            onClick={handleClearData}
-            className="ml-2 px-3 py-1.5 text-sm bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors"
-          >
-            데이터 초기화
-          </button>
-        )}
-      </div>
-
-      <div className="flex items-center gap-1 bg-neutral-100 dark:bg-neutral-800 rounded-lg p-1">
+    <header className="flex items-center justify-between gap-2 p-2 sm:p-3 border-b border-neutral-200 dark:border-neutral-800">
+      {/* 좌측: 스케일 버튼 */}
+      <div className="flex items-center gap-0.5 bg-neutral-100 dark:bg-neutral-800 rounded-lg p-0.5">
         {SCALE_ORDER.map((s) => (
           <button
             key={s}
             onClick={() => setScaleTo(s)}
             className={cn(
-              'px-3 py-1.5 text-sm rounded-md transition-colors',
+              'px-2 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm rounded-md transition-colors',
               scale === s
-                ? 'bg-white dark:bg-neutral-900 shadow-sm'
+                ? 'bg-white dark:bg-neutral-900 shadow-sm font-medium'
                 : 'hover:bg-neutral-200 dark:hover:bg-neutral-700'
             )}
           >
             {SCALE_LABELS[s]}
           </button>
         ))}
+      </div>
+
+      {/* 중앙: 날짜 (day 뷰일 때만) + 네비게이션 */}
+      {showNavButtons && (
+        <div className="flex items-center gap-1">
+          <button
+            onClick={navigatePrev}
+            className="p-1.5 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg transition-colors"
+            aria-label="이전"
+          >
+            ←
+          </button>
+          <span className="text-xs sm:text-sm font-medium min-w-24 sm:min-w-32 text-center">
+            {formatDate(focusDate, 'YYYY.MM.DD')}
+          </span>
+          <button
+            onClick={navigateNext}
+            className="p-1.5 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg transition-colors"
+            aria-label="다음"
+          >
+            →
+          </button>
+        </div>
+      )}
+
+      {/* 우측: 오늘 + 데이터 버튼 */}
+      <div className="flex items-center gap-1">
+        <button
+          onClick={goToToday}
+          className="px-2 py-1 sm:py-1.5 text-xs sm:text-sm bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 rounded-lg transition-colors"
+        >
+          오늘
+        </button>
+        {!hasData ? (
+          <button
+            onClick={handleLoadDummy}
+            className="px-2 py-1 sm:py-1.5 text-xs sm:text-sm bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors"
+          >
+            <span className="sm:hidden">+</span>
+            <span className="hidden sm:inline">더미</span>
+          </button>
+        ) : (
+          <button
+            onClick={handleClearData}
+            className="px-2 py-1 sm:py-1.5 text-xs sm:text-sm bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors"
+          >
+            <span className="sm:hidden">×</span>
+            <span className="hidden sm:inline">초기화</span>
+          </button>
+        )}
       </div>
     </header>
   );
