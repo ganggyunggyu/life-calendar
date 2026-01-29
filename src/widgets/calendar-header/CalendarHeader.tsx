@@ -1,30 +1,43 @@
 'use client';
 
 import { useSetAtom, useAtomValue } from 'jotai';
+import { motion } from 'framer-motion';
 import { useCalendar } from '@/shared/hooks/use-calendar';
+import { useTheme } from '@/shared/hooks/use-theme';
 import { cn } from '@/shared/lib/cn';
-import { formatDate } from '@/shared/lib/date-utils';
 import { initializeDummyData } from '@/shared/lib/dummy-data';
 import { SCALE_ORDER } from '@/shared/stores/calendar';
 import { entriesAtom, eventsAtom } from '@/shared/stores/entries';
 import type { CalendarScale } from '@/shared/types/calendar';
+import type { Theme } from '@/shared/stores/theme';
 
-const SCALE_LABELS: Record<CalendarScale, string> = {
-  decade: '10년',
-  year: '연',
-  month: '월',
-  week: '주',
-  day: '일',
+const SCALE_LABELS: Record<CalendarScale, { short: string; full: string }> = {
+  decade: { short: '10Y', full: '10년' },
+  year: { short: '년', full: '연' },
+  month: { short: '월', full: '월' },
+  week: { short: '주', full: '주' },
+};
+
+const THEME_ICONS: Record<Theme, string> = {
+  system: '🖥️',
+  light: '☀️',
+  dark: '🌙',
+};
+
+const buttonTransition = {
+  type: 'spring' as const,
+  stiffness: 400,
+  damping: 25,
 };
 
 export function CalendarHeader() {
-  const { scale, focusDate, navigatePrev, navigateNext, goToToday, setScaleTo } = useCalendar();
+  const { scale, goToToday, setScaleTo } = useCalendar();
+  const { theme, toggleTheme } = useTheme();
   const setEntries = useSetAtom(entriesAtom);
   const setEvents = useSetAtom(eventsAtom);
   const entries = useAtomValue(entriesAtom);
 
   const hasData = Object.keys(entries).length > 0;
-  const showNavButtons = scale === 'day';
 
   const handleLoadDummy = () => {
     const { entries, events } = initializeDummyData();
@@ -38,73 +51,105 @@ export function CalendarHeader() {
   };
 
   return (
-    <header className="flex items-center justify-between gap-2 p-2 sm:p-3 border-b border-neutral-200 dark:border-neutral-800">
-      {/* 좌측: 스케일 버튼 */}
-      <div className="flex items-center gap-0.5 bg-neutral-100 dark:bg-neutral-800 rounded-lg p-0.5">
+    <header
+      className={cn(
+        'sticky top-0 z-20',
+        'flex items-center justify-between gap-2',
+        'px-2 sm:px-4 py-2',
+        'bg-bg-primary/80 backdrop-blur-xl',
+        'border-b border-border-subtle',
+      )}
+    >
+      {/* Segmented Control */}
+      <div
+        className={cn(
+          'flex items-center gap-0.5',
+          'bg-bg-tertiary',
+          'rounded-lg sm:rounded-xl p-0.5 sm:p-1',
+        )}
+      >
         {SCALE_ORDER.map((s) => (
-          <button
+          <motion.button
             key={s}
             onClick={() => setScaleTo(s)}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            transition={buttonTransition}
             className={cn(
-              'px-2 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm rounded-md transition-colors',
+              'min-w-8 sm:min-w-10 min-h-8 sm:min-h-9',
+              'px-2 sm:px-3 py-1.5 sm:py-2',
+              'text-xs sm:text-sm font-medium',
+              'rounded-md sm:rounded-lg',
+              'transition-all duration-fast',
               scale === s
-                ? 'bg-white dark:bg-neutral-900 shadow-sm font-medium'
-                : 'hover:bg-neutral-200 dark:hover:bg-neutral-700'
+                ? cn('bg-bg-elevated', 'shadow-sm', 'text-text-primary')
+                : cn('text-text-secondary', 'hover:text-text-primary'),
             )}
           >
-            {SCALE_LABELS[s]}
-          </button>
+            <span className="sm:hidden">{SCALE_LABELS[s].short}</span>
+            <span className="hidden sm:inline">{SCALE_LABELS[s].full}</span>
+          </motion.button>
         ))}
       </div>
 
-      {/* 중앙: 날짜 (day 뷰일 때만) + 네비게이션 */}
-      {showNavButtons && (
-        <div className="flex items-center gap-1">
-          <button
-            onClick={navigatePrev}
-            className="p-1.5 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg transition-colors"
-            aria-label="이전"
-          >
-            ←
-          </button>
-          <span className="text-xs sm:text-sm font-medium min-w-24 sm:min-w-32 text-center">
-            {formatDate(focusDate, 'YYYY.MM.DD')}
-          </span>
-          <button
-            onClick={navigateNext}
-            className="p-1.5 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg transition-colors"
-            aria-label="다음"
-          >
-            →
-          </button>
-        </div>
-      )}
+      {/* Actions */}
+      <div className="flex items-center gap-1.5 sm:gap-2">
+        <motion.button
+          onClick={toggleTheme}
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          transition={buttonTransition}
+          className={cn(
+            'w-9 h-9 sm:w-11 sm:h-11',
+            'flex items-center justify-center',
+            'text-sm sm:text-base',
+            'bg-bg-tertiary hover:bg-border-default',
+            'rounded-lg sm:rounded-xl',
+            'transition-colors duration-fast',
+          )}
+          aria-label={`테마: ${theme}`}
+        >
+          {THEME_ICONS[theme]}
+        </motion.button>
 
-      {/* 우측: 오늘 + 데이터 버튼 */}
-      <div className="flex items-center gap-1">
-        <button
+        <motion.button
           onClick={goToToday}
-          className="px-2 py-1 sm:py-1.5 text-xs sm:text-sm bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 rounded-lg transition-colors"
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          transition={buttonTransition}
+          className={cn(
+            'h-9 sm:h-11',
+            'px-2.5 sm:px-4 py-1.5 sm:py-2',
+            'text-xs sm:text-sm font-medium',
+            'bg-bg-tertiary hover:bg-border-default',
+            'text-text-primary',
+            'rounded-lg sm:rounded-xl',
+            'transition-colors duration-fast',
+          )}
         >
           오늘
-        </button>
-        {!hasData ? (
-          <button
-            onClick={handleLoadDummy}
-            className="px-2 py-1 sm:py-1.5 text-xs sm:text-sm bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors"
-          >
-            <span className="sm:hidden">+</span>
-            <span className="hidden sm:inline">더미</span>
-          </button>
-        ) : (
-          <button
-            onClick={handleClearData}
-            className="px-2 py-1 sm:py-1.5 text-xs sm:text-sm bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors"
-          >
-            <span className="sm:hidden">×</span>
-            <span className="hidden sm:inline">초기화</span>
-          </button>
-        )}
+        </motion.button>
+
+        <motion.button
+          onClick={hasData ? handleClearData : handleLoadDummy}
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          transition={buttonTransition}
+          className={cn(
+            'w-9 h-9 sm:w-auto sm:h-11',
+            'px-0 sm:px-4 py-0 sm:py-2',
+            'flex items-center justify-center',
+            'text-sm font-medium',
+            'rounded-lg sm:rounded-xl',
+            'transition-colors duration-fast',
+            hasData
+              ? 'bg-negative hover:bg-negative/90 text-text-inverse'
+              : 'bg-accent hover:bg-accent-hover text-text-inverse',
+          )}
+        >
+          <span className="sm:hidden">{hasData ? '×' : '+'}</span>
+          <span className="hidden sm:inline">{hasData ? '초기화' : '더미'}</span>
+        </motion.button>
       </div>
     </header>
   );
