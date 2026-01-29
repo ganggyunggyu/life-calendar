@@ -35,7 +35,7 @@ export const focusDateStringAtom = atom(
 );
 
 // 스케일 변경 헬퍼
-export const SCALE_ORDER: CalendarScale[] = ['decade', 'year', 'month', 'week', 'day'];
+export const SCALE_ORDER: CalendarScale[] = ['decade', 'year', 'month', 'week'];
 
 export function getNextScale(current: CalendarScale): CalendarScale | null {
   const idx = SCALE_ORDER.indexOf(current);

@@ -111,8 +111,6 @@ export function getVisibleRange(date: Date, scale: CalendarScale): DateRange {
       return getMonthRange(date);
     case 'week':
       return getWeekRange(date);
-    case 'day':
-      return { start: date, end: date };
   }
 }
 

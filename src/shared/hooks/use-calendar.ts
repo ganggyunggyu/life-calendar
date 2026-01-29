@@ -57,9 +57,6 @@ export function useCalendar() {
       case 'week':
         setFocusDate(addDays(focusDate, -7));
         break;
-      case 'day':
-        setFocusDate(addDays(focusDate, -1));
-        break;
     }
   }, [scale, focusDate, setFocusDate]);
 
@@ -76,9 +73,6 @@ export function useCalendar() {
         break;
       case 'week':
         setFocusDate(addDays(focusDate, 7));
-        break;
-      case 'day':
-        setFocusDate(addDays(focusDate, 1));
         break;
     }
   }, [scale, focusDate, setFocusDate]);

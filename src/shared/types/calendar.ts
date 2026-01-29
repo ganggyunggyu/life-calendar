@@ -1,4 +1,4 @@
-export type CalendarScale = 'decade' | 'year' | 'month' | 'week' | 'day';
+export type CalendarScale = 'decade' | 'year' | 'month' | 'week';
 
 export interface DateRange {
   start: Date;

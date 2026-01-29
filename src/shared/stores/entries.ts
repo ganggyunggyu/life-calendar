@@ -3,6 +3,8 @@ import { atomWithStorage } from 'jotai/utils';
 import type { DayEntry, TimelineEvent } from '@/shared/types/calendar';
 import { STORAGE_PREFIX } from '@/shared/constants/app-meta';
 
+export const selectedDateAtom = atom<Date | null>(null);
+
 export const entriesAtom = atomWithStorage<Record<string, DayEntry>>(
   `${STORAGE_PREFIX}entries`,
   {}
