@@ -2,6 +2,7 @@
 
 import { useRef, useEffect, useState, useCallback } from 'react';
 import { useAtomValue } from 'jotai';
+import { motion } from 'framer-motion';
 import { useCalendar } from '@/shared/hooks/use-calendar';
 import { cn } from '@/shared/lib/cn';
 import { getDaysInMonth } from '@/shared/lib/date-utils';
@@ -36,6 +37,12 @@ function generateAllMonths(): MonthData[] {
 }
 
 const ALL_MONTHS = generateAllMonths();
+
+const buttonTransition = {
+  type: 'spring' as const,
+  stiffness: 400,
+  damping: 25,
+};
 
 export function YearView() {
   const { focusDate, goToDate, zoomIn } = useCalendar();
@@ -103,21 +110,29 @@ export function YearView() {
   return (
     <div className="h-full flex flex-col">
       {/* 현재 구간 표시 */}
-      <div className="px-4 sm:px-6 py-2 sm:py-3 border-b border-neutral-200 dark:border-neutral-800">
+      <div
+        className={cn(
+          'px-4 sm:px-6 py-2 sm:py-3',
+          'border-b border-border-subtle',
+          'bg-bg-primary/80 backdrop-blur-xl',
+        )}
+      >
         <div className="flex items-center justify-between">
-          <div className="text-xs sm:text-sm text-neutral-500">보이는 구간</div>
-          <div className="font-semibold text-sm sm:text-base">{visibleRange.start} - {visibleRange.end}</div>
+          <div className="text-xs sm:text-sm text-text-tertiary">보이는 구간</div>
+          <div className="font-semibold text-sm sm:text-base text-text-primary">
+            {visibleRange.start} - {visibleRange.end}
+          </div>
         </div>
-        <div className="mt-2 h-1 bg-neutral-100 dark:bg-neutral-800 rounded-full overflow-hidden">
+        <div className="mt-2 h-1 bg-bg-tertiary rounded-full overflow-hidden">
           <div
-            className="h-full bg-green-500 rounded-full transition-all"
+            className="h-full bg-accent rounded-full transition-all"
             style={{
               marginLeft: `${(allMonths.findIndex((m) => m.label === visibleRange.start) / allMonths.length) * 100}%`,
               width: `${((allMonths.findIndex((m) => m.label === visibleRange.end) - allMonths.findIndex((m) => m.label === visibleRange.start) + 1) / allMonths.length) * 100}%`,
             }}
           />
         </div>
-        <div className="hidden sm:flex justify-between text-xs text-neutral-400 mt-1">
+        <div className="hidden sm:flex justify-between text-xs text-text-tertiary mt-1">
           <span>{START_YEAR}</span>
           <span>{END_YEAR}</span>
         </div>
@@ -134,7 +149,6 @@ export function YearView() {
             const { year, month, key } = monthData;
             const isCurrentMonth = year === today.getFullYear() && month === today.getMonth();
             const isSelected = year === currentYear && month === currentMonth;
-            const daysCount = getDaysInMonth(year, month);
             const monthEntries = entriesByMonth[key] || [];
             const monthEvents = eventsByMonth[key] || [];
             const { count, avgMood } = getMonthStats(monthEntries);
@@ -146,38 +160,62 @@ export function YearView() {
             const isYearStart = month === 0;
 
             return (
-              <div
-                key={key}
-                className="flex flex-col h-full snap-center"
-              >
+              <div key={key} className="flex flex-col h-full snap-center">
                 {/* 콘텐츠 카드 */}
-                <button
+                <motion.button
                   onClick={() => handleMonthClick(year, month)}
+                  whileHover={!isFuture ? { y: -4 } : undefined}
+                  whileTap={!isFuture ? { scale: 0.98 } : undefined}
+                  transition={buttonTransition}
                   className={cn(
-                    'flex-1 w-[72px] sm:w-[120px] p-1.5 sm:p-2 rounded-lg border transition-all text-left flex flex-col',
-                    'hover:border-green-400 hover:shadow-md hover:-translate-y-1',
-                    'active:scale-95',
-                    'border-neutral-200 dark:border-neutral-800',
-                    isSelected && 'bg-green-50 dark:bg-green-900/20 border-green-400 -translate-y-1 shadow-md',
+                    'flex-1 w-[72px] sm:w-[120px]',
+                    'p-1.5 sm:p-2',
+                    'rounded-xl border',
+                    'transition-all duration-normal text-left flex flex-col',
+                    'bg-bg-elevated',
+                    'border-border-subtle',
+                    'hover:border-accent/50 hover:shadow-md',
+                    isSelected && 'bg-accent-subtle border-accent shadow-md -translate-y-1',
                     isFuture && 'opacity-40',
-                    isYearStart && 'border-l-2 border-l-green-500'
+                    isYearStart && 'border-l-2 border-l-accent',
                   )}
                 >
                   {/* 월 헤더 */}
                   <div className="flex items-center justify-between mb-0.5 sm:mb-1">
-                    <div>
-                      {isYearStart && (
-                        <div className="text-[10px] sm:text-xs font-bold text-green-600 dark:text-green-400">{year}</div>
-                      )}
-                      <span
-                        className={cn(
-                          'text-xs sm:text-sm font-bold',
-                          isCurrentMonth && 'text-green-500',
-                          isFuture && 'text-neutral-400'
+                    <div className="flex items-center gap-1.5">
+                      <div>
+                        {isYearStart && (
+                          <div className="text-[10px] sm:text-xs font-bold text-accent">{year}</div>
                         )}
-                      >
-                        {MONTHS[month]}
-                      </span>
+                        <span
+                          className={cn(
+                            'text-xs sm:text-sm font-bold',
+                            isCurrentMonth ? 'text-accent' : 'text-text-primary',
+                            isFuture && 'text-text-tertiary',
+                          )}
+                        >
+                          {MONTHS[month]}
+                        </span>
+                      </div>
+                      {/* PC: 요일별 도트 */}
+                      {(() => {
+                        const weekdayActivity = getWeekdayActivity(monthEntries);
+                        const hasAnyActivity = weekdayActivity.some(Boolean);
+                        if (!hasAnyActivity || isFuture) return null;
+                        return (
+                          <div className="hidden sm:flex gap-0.5">
+                            {weekdayActivity.map((active, idx) => (
+                              <div
+                                key={idx}
+                                className={cn(
+                                  'w-1 h-1 rounded-full',
+                                  active ? 'bg-accent' : 'bg-bg-tertiary',
+                                )}
+                              />
+                            ))}
+                          </div>
+                        );
+                      })()}
                     </div>
                     {avgMood > 0 && (
                       <span className="text-xs sm:text-sm">{getMoodEmoji(avgMood)}</span>
@@ -192,36 +230,57 @@ export function YearView() {
                           className="w-1 h-2 rounded-full shrink-0"
                           style={{ backgroundColor: event.color }}
                         />
-                        <span className="text-[10px] truncate">{event.title}</span>
+                        <span className="text-[10px] truncate text-text-secondary">{event.title}</span>
                       </div>
                     ))}
                     {monthEvents.length > 2 && (
-                      <div className="text-[10px] text-neutral-400">+{monthEvents.length - 2}</div>
+                      <div className="text-[10px] text-text-tertiary">+{monthEvents.length - 2}</div>
                     )}
                   </div>
 
-                  {/* 모바일: 간단한 정보 */}
+                  {/* 모바일: 요일별 도트 그리드 */}
                   <div className="sm:hidden flex-1 flex items-center justify-center">
-                    {count > 0 ? (
-                      <span className="text-[10px] text-neutral-500">{count}</span>
-                    ) : (
-                      <span className="text-[10px] text-neutral-400">-</span>
-                    )}
+                    {(() => {
+                      const weekdayActivity = getWeekdayActivity(monthEntries);
+                      const hasAnyActivity = weekdayActivity.some(Boolean);
+
+                      if (isFuture) {
+                        return <span className="text-[10px] text-text-tertiary">-</span>;
+                      }
+
+                      if (!hasAnyActivity) {
+                        return <span className="text-[10px] text-text-tertiary">-</span>;
+                      }
+
+                      return (
+                        <div className="flex gap-0.5">
+                          {weekdayActivity.map((active, idx) => (
+                            <div
+                              key={idx}
+                              className={cn(
+                                'w-2 h-2 rounded-full transition-colors',
+                                active ? 'bg-accent' : 'bg-bg-tertiary',
+                              )}
+                            />
+                          ))}
+                        </div>
+                      );
+                    })()}
                   </div>
 
                   {/* 활동 바 */}
                   {count > 0 && (
                     <div>
-                      <div className="hidden sm:block text-[10px] text-neutral-500">{count}개</div>
-                      <div className="h-1 bg-neutral-100 dark:bg-neutral-800 rounded-full overflow-hidden">
+                      <div className="hidden sm:block text-[10px] text-text-secondary">{count}개</div>
+                      <div className="h-1 bg-bg-tertiary rounded-full overflow-hidden">
                         <div
-                          className="h-full bg-linear-to-r from-green-400 to-green-600 rounded-full"
+                          className="h-full bg-linear-to-r from-accent to-accent-hover rounded-full"
                           style={{ width: `${barHeight}%` }}
                         />
                       </div>
                     </div>
                   )}
-                </button>
+                </motion.button>
 
                 {/* 타임라인 점 */}
                 <div className="flex items-center pt-1.5 sm:pt-2">
@@ -229,15 +288,15 @@ export function YearView() {
                     className={cn(
                       'w-1.5 sm:w-2 h-1.5 sm:h-2 rounded-full border shrink-0',
                       isCurrentMonth
-                        ? 'border-green-500 bg-green-500'
+                        ? 'border-accent bg-accent'
                         : isYearStart
-                          ? 'border-green-400 bg-green-400'
-                          : 'border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-900',
-                      isSelected && 'ring-2 ring-green-300'
+                          ? 'border-accent/70 bg-accent/70'
+                          : 'border-border-strong bg-bg-primary',
+                      isSelected && 'ring-2 ring-accent/30',
                     )}
                   />
                   {!isLast && (
-                    <div className="h-px w-[66px] sm:w-[112px] bg-neutral-200 dark:bg-neutral-700" />
+                    <div className="h-px w-[66px] sm:w-[112px] bg-border-default" />
                   )}
                 </div>
               </div>
@@ -255,4 +314,13 @@ function getMoodEmoji(avgMood: number): string {
   if (avgMood >= 2.5) return '😐';
   if (avgMood >= 1.5) return '😔';
   return '😢';
+}
+
+function getWeekdayActivity(entries: { date: string }[]): boolean[] {
+  const weekdays = Array(7).fill(false);
+  entries.forEach((entry) => {
+    const day = new Date(entry.date).getDay();
+    weekdays[day] = true;
+  });
+  return weekdays;
 }

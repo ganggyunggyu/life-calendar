@@ -1,23 +1,17 @@
 'use client';
 
 import { useRef, useEffect, useState, useCallback } from 'react';
-import { useAtomValue } from 'jotai';
+import { useAtomValue, useSetAtom } from 'jotai';
+import { motion } from 'framer-motion';
 import { useCalendar } from '@/shared/hooks/use-calendar';
+import { MOOD_EMOJI } from '@/shared/constants/mood';
 import { cn } from '@/shared/lib/cn';
 import { getMonthCalendarDays, isToday, isSameDay, isSameMonth, getDaysInMonth } from '@/shared/lib/date-utils';
-import { entriesAtom, eventsAtom } from '@/shared/stores/entries';
+import { entriesAtom, eventsAtom, selectedDateAtom } from '@/shared/stores/entries';
 
 const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토'];
 const START_YEAR = 1900;
 const END_YEAR = 2100;
-
-const MOOD_EMOJI: Record<number, string> = {
-  1: '😢',
-  2: '😔',
-  3: '😐',
-  4: '🙂',
-  5: '😄',
-};
 
 interface MonthData {
   year: number;
@@ -50,10 +44,17 @@ function generateMonths(): MonthData[] {
 
 const ALL_MONTHS = generateMonths();
 
+const buttonTransition = {
+  type: 'spring' as const,
+  stiffness: 400,
+  damping: 25,
+};
+
 export function MonthView() {
-  const { focusDate, goToDate, zoomIn } = useCalendar();
+  const { focusDate } = useCalendar();
   const entries = useAtomValue(entriesAtom);
   const events = useAtomValue(eventsAtom);
+  const setSelectedDate = useSetAtom(selectedDateAtom);
   const scrollRef = useRef<HTMLDivElement>(null);
   const monthRefs = useRef<Map<string, HTMLDivElement>>(new Map());
   const isInitialMount = useRef(true);
@@ -64,8 +65,7 @@ export function MonthView() {
   );
 
   const handleDayClick = (date: Date) => {
-    goToDate(date);
-    zoomIn();
+    setSelectedDate(date);
   };
 
   const getDateKey = (date: Date) => date.toISOString().split('T')[0];
@@ -129,8 +129,14 @@ export function MonthView() {
   return (
     <div className="h-full flex flex-col">
       {/* 현재 보이는 월 표시 */}
-      <div className="px-3 sm:px-4 py-1.5 sm:py-2 border-b border-neutral-200 dark:border-neutral-800 bg-white/80 dark:bg-neutral-900/80 backdrop-blur-sm">
-        <div className="text-base sm:text-lg font-semibold">
+      <div
+        className={cn(
+          'px-3 sm:px-4 py-2 sm:py-2.5',
+          'border-b border-border-subtle',
+          'bg-bg-primary/80 backdrop-blur-xl',
+        )}
+      >
+        <div className="text-base sm:text-lg font-semibold text-text-primary">
           {visibleMonth.replace('-', '년 ')}월
         </div>
       </div>
@@ -149,30 +155,38 @@ export function MonthView() {
             <div
               key={key}
               ref={setMonthRef(key)}
-              className="border-b-4 border-neutral-100 dark:border-neutral-800"
+              className="border-b-4 border-border-subtle"
             >
               {/* 월 헤더 */}
               <div
                 className={cn(
-                  'sticky top-0 z-10 px-3 sm:px-4 py-2 sm:py-3 bg-white dark:bg-neutral-950 border-b border-neutral-200 dark:border-neutral-800',
-                  isCurrentMonth && 'bg-blue-50 dark:bg-blue-900/20'
+                  'sticky top-0 z-10',
+                  'px-3 sm:px-4 py-2 sm:py-3',
+                  'bg-bg-primary border-b border-border-subtle',
+                  isCurrentMonth && 'bg-accent-subtle',
                 )}
               >
-                <span className={cn('text-base sm:text-lg font-bold', isCurrentMonth && 'text-blue-600')}>
+                <span
+                  className={cn(
+                    'text-base sm:text-lg font-bold',
+                    isCurrentMonth ? 'text-accent' : 'text-text-primary',
+                  )}
+                >
                   {year}년 {month + 1}월
                 </span>
               </div>
 
               {/* 그리드 캘린더 */}
-              <div className="p-2 sm:p-4 bg-white dark:bg-neutral-950">
+              <div className="p-2 sm:p-4 bg-bg-primary">
                 <div className="grid grid-cols-7 gap-0.5 sm:gap-1 mb-1 sm:mb-2">
                   {WEEKDAYS.map((day, idx) => (
                     <div
                       key={day}
                       className={cn(
                         'text-center text-[10px] sm:text-xs font-medium py-0.5 sm:py-1',
-                        idx === 0 && 'text-red-500',
-                        idx === 6 && 'text-blue-500'
+                        idx === 0 && 'text-sunday',
+                        idx === 6 && 'text-saturday',
+                        idx !== 0 && idx !== 6 && 'text-text-tertiary',
                       )}
                     >
                       {day}
@@ -190,34 +204,36 @@ export function MonthView() {
                     const dayEvents = getEventsForDate(date);
 
                     return (
-                      <button
+                      <motion.button
                         key={idx}
-                        onClick={() => {
-                          goToDate(date);
-                        }}
+                        onClick={() => handleDayClick(date)}
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        transition={buttonTransition}
                         className={cn(
-                          'aspect-square flex items-center justify-center rounded-md sm:rounded-lg text-xs sm:text-sm transition-colors relative',
-                          'hover:bg-neutral-100 dark:hover:bg-neutral-800',
-                          'active:scale-95',
-                          !isThisMonth && 'text-neutral-300 dark:text-neutral-700',
-                          isThisMonth && dayOfWeek === 0 && 'text-red-500',
-                          isThisMonth && dayOfWeek === 6 && 'text-blue-500',
-                          isTodayDate && 'bg-blue-500 text-white hover:bg-blue-600',
-                          isSelected && !isTodayDate && 'bg-blue-100 dark:bg-blue-900/40'
+                          'aspect-square flex items-center justify-center',
+                          'rounded-lg text-xs sm:text-sm',
+                          'transition-colors duration-fast relative',
+                          'hover:bg-bg-secondary',
+                          !isThisMonth && 'text-text-tertiary opacity-40',
+                          isThisMonth && dayOfWeek === 0 && 'text-sunday',
+                          isThisMonth && dayOfWeek === 6 && 'text-saturday',
+                          isTodayDate && 'bg-accent text-text-inverse hover:bg-accent-hover shadow-sm',
+                          isSelected && !isTodayDate && 'bg-accent-subtle border border-accent/30',
                         )}
                       >
                         {date.getDate()}
-                        {isThisMonth && (entry || dayEvents.length > 0) && (
-                          <div className="absolute bottom-0.5 sm:bottom-1 w-1 h-1 rounded-full bg-blue-400" />
+                        {isThisMonth && (entry || dayEvents.length > 0) && !isTodayDate && (
+                          <div className="absolute bottom-0.5 sm:bottom-1 w-1 h-1 rounded-full bg-accent" />
                         )}
-                      </button>
+                      </motion.button>
                     );
                   })}
                 </div>
               </div>
 
               {/* 날짜별 상세 리스트 */}
-              <div className="bg-neutral-50 dark:bg-neutral-900">
+              <div className="bg-bg-secondary">
                 {days.map((date) => {
                   const isTodayDate = isToday(date);
                   const isSelected = isSameDay(date, focusDate);
@@ -230,14 +246,18 @@ export function MonthView() {
                   if (!hasContent) return null;
 
                   return (
-                    <button
+                    <motion.button
                       key={dateKey}
                       onClick={() => handleDayClick(date)}
+                      whileTap={{ scale: 0.99 }}
                       className={cn(
-                        'w-full flex items-start gap-2 sm:gap-3 px-3 sm:px-4 py-2 sm:py-3 border-b border-neutral-100 dark:border-neutral-800 text-left transition-colors',
-                        'hover:bg-white dark:hover:bg-neutral-800',
-                        'active:bg-neutral-100 dark:active:bg-neutral-700',
-                        isSelected && 'bg-blue-50 dark:bg-blue-900/20'
+                        'w-full flex items-start gap-2 sm:gap-3',
+                        'px-3 sm:px-4 py-2.5 sm:py-3',
+                        'border-b border-border-subtle',
+                        'text-left transition-colors duration-fast',
+                        'hover:bg-bg-elevated',
+                        'active:bg-bg-tertiary',
+                        isSelected && 'bg-accent-subtle',
                       )}
                     >
                       {/* 날짜 */}
@@ -245,7 +265,11 @@ export function MonthView() {
                         <div
                           className={cn(
                             'text-[9px] sm:text-[10px]',
-                            dayOfWeek === 0 ? 'text-red-400' : dayOfWeek === 6 ? 'text-blue-400' : 'text-neutral-400'
+                            dayOfWeek === 0
+                              ? 'text-sunday/70'
+                              : dayOfWeek === 6
+                                ? 'text-saturday/70'
+                                : 'text-text-tertiary',
                           )}
                         >
                           {WEEKDAYS[dayOfWeek]}
@@ -253,9 +277,11 @@ export function MonthView() {
                         <div
                           className={cn(
                             'text-base sm:text-lg font-bold',
-                            dayOfWeek === 0 && 'text-red-500',
-                            dayOfWeek === 6 && 'text-blue-500',
-                            isTodayDate && 'w-6 h-6 sm:w-7 sm:h-7 mx-auto rounded-full bg-blue-500 text-white flex items-center justify-center text-xs sm:text-sm'
+                            dayOfWeek === 0 && 'text-sunday',
+                            dayOfWeek === 6 && 'text-saturday',
+                            dayOfWeek !== 0 && dayOfWeek !== 6 && 'text-text-primary',
+                            isTodayDate &&
+                              'w-6 h-6 sm:w-7 sm:h-7 mx-auto rounded-full bg-accent text-text-inverse flex items-center justify-center text-xs sm:text-sm',
                           )}
                         >
                           {date.getDate()}
@@ -267,14 +293,16 @@ export function MonthView() {
                         {dayEvents.map((event) => (
                           <div
                             key={event.id}
-                            className="flex items-center gap-1.5 sm:gap-2 mb-1 p-1 sm:p-1.5 rounded"
+                            className="flex items-center gap-1.5 sm:gap-2 mb-1 p-1.5 sm:p-2 rounded-md"
                             style={{ backgroundColor: `${event.color}15` }}
                           >
                             <div
-                              className="w-0.5 h-3 sm:h-4 rounded-full shrink-0"
+                              className="w-0.5 h-3.5 sm:h-4 rounded-full shrink-0"
                               style={{ backgroundColor: event.color }}
                             />
-                            <span className="text-xs sm:text-sm font-medium truncate">{event.title}</span>
+                            <span className="text-xs sm:text-sm font-medium truncate text-text-primary">
+                              {event.title}
+                            </span>
                           </div>
                         ))}
                         {entry && (
@@ -283,14 +311,14 @@ export function MonthView() {
                               <span className="text-sm sm:text-base">{MOOD_EMOJI[entry.moodScore]}</span>
                             )}
                             {entry.summaryText && (
-                              <span className="text-xs sm:text-sm text-neutral-600 dark:text-neutral-400 truncate">
+                              <span className="text-xs sm:text-sm text-text-secondary truncate">
                                 {entry.summaryText}
                               </span>
                             )}
                           </div>
                         )}
                       </div>
-                    </button>
+                    </motion.button>
                   );
                 })}
               </div>
