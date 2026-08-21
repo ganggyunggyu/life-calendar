@@ -183,3 +183,7 @@ const SCALE_LABELS: Record<CalendarScale, { short: string; full: string }> = {
 - **서버 연동 없음**: 모든 기록은 `atomWithStorage`로 브라우저 `localStorage`에만 저장된다. TanStack Query Provider는 구성돼 있지만(`src/app/providers.tsx`) 실제 API 호출 훅은 아직 없다. 기기를 바꾸면 기록이 이어지지 않는다.
 - **태그/체크리스트/메트릭 미구현**: `DayEntry` 타입(`src/shared/types/calendar.ts`)에는 `tags`, `EntryBlock`(checklist, metric, photo)이 정의돼 있지만 `EntryFormModal`에서는 감정 점수와 텍스트 요약/노트만 입력 가능하다.
 - **더미 데이터로만 검증 가능**: 실 사용 데이터가 쌓이기 전까지는 헤더의 "더미 데이터 로드" 버튼(`src/shared/lib/dummy-data.ts`)으로 UI를 확인하는 구조다.
+
+## 라이선스
+
+개인 프로젝트로 별도 라이선스를 명시하지 않았다. 코드 참고는 자유롭게 하되, 재배포나 상업적 이용은 문의 바란다.
